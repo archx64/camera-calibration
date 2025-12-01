@@ -18,7 +18,7 @@ def create_a4_charuco():
     aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
 
     # --- 2. Calculate Sizes ---
-    # Available width for the board
+    # available width for the board
     usable_width = A4_WIDTH_MM - (2 * MARGIN_MM)
     usable_height = A4_HEIGHT_MM - (2 * MARGIN_MM)
     
@@ -46,19 +46,19 @@ def create_a4_charuco():
     # Formula: pixels = (mm / 25.4) * DPI
     DPI = 300
     
-    # Board physical size in pixels
+    # board physical size in pixels
     board_width_px = int((SQUARES_X * square_length_mm / 25.4) * DPI)
     board_height_px = int((SQUARES_Y * square_length_mm / 25.4) * DPI)
     
-    # Margins in pixels
+    # margins in pixels
     margin_px = int((MARGIN_MM / 25.4) * DPI)
     
-    # Total Image size
+    # total image size
     img_width_px = board_width_px + 2 * margin_px
     img_height_px = board_height_px + 2 * margin_px
     
-    # --- 4. Generate Board ---
-    # Note: We convert mm to METERS for the OpenCV function
+    # Generate Board
+    # we must convert millimeters to meters for the OpenCV function
     board = cv2.aruco.CharucoBoard(
         (SQUARES_X, SQUARES_Y), 
         square_length_mm / 1000.0, 
@@ -66,13 +66,13 @@ def create_a4_charuco():
         aruco_dict
     )
     
-    # Generate the board image (just the pattern)
+    # generate the board image (just the pattern)
     pattern_img = board.generateImage((board_width_px, board_height_px), marginSize=0)
     
-    # Create a white A4 canvas
+    # create a white A4 canvas
     final_img = np.ones((img_height_px, img_width_px), dtype=np.uint8) * 255
     
-    # Paste the pattern in the center (accounting for margins)
+    # paste the pattern in the center in order to account for margins
     final_img[margin_px:margin_px+board_height_px, margin_px:margin_px+board_width_px] = pattern_img
 
     # Save
