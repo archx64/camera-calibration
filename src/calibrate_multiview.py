@@ -1,6 +1,6 @@
 import os, glob, cv2, json
 import numpy as np
-from utils import *
+from .utils import *
 
 PATH_CAM1 = "calibration_data/cam1/*.jpg"
 PATH_CAM2 = "calibration_data/cam2/*.jpg"
@@ -137,46 +137,110 @@ def main():
 
         print(f"RMSE: {ret:.4f}")
         intrinsics[name] = {"K": K, "D": D, "shape": res["shape"], "rmse": ret}
-    
+
     # let's calibrate extrinsics
-    print('\nphase 2: extrinsic stereo calibration')
+    print("\nphase 2: extrinsic stereo calibration")
 
     # identify reference camera
-    ref_cam = next((c for c in CAMERAS if c['is_reference']), None)
+    ref_cam = next((c for c in CAMERAS if c["is_reference"]), None)
 
     if not ref_cam:
         print(ERROR + "Error: No camera marked as 'is_reference': 'True'")
         exit()
-    
-    ref_name = ref_cam['name']
-    ref_data = results[ref_name]['data_dict']
+
+    ref_name = ref_cam["name"]
+    ref_data = results[ref_name]["data_dict"]
     ref_intrinsics = intrinsics[ref_name]
 
-    final_output = {
-        'reference_camera' : ref_name,
-        'camera': {}
-    }
+    final_output = {"reference_camera": ref_name, "camera": {}}
 
     # add reference camera to output (identity matrix)
-    final_output['cameras'][ref_name]  = {
-        'K': ref_intrinsics['K'],
-        'D': ref_intrinsics['D'],
-        'R': np.eye(3),
-        'T': np.zeros((3,1)),
-        'rmse': ref_intrinsics['rmse']
+    final_output["camera"][ref_name] = {
+        "K": ref_intrinsics["K"],
+        "D": ref_intrinsics["D"],
+        "R": np.eye(3),
+        "T": np.zeros((3, 1)),
+        "rmse": ref_intrinsics["rmse"],
     }
 
     # iterate over satellites (peripherical camers)
     for cam in CAMERAS:
-        target_name = cam['name']
+        target_name = cam["name"]
 
-        if target_name == ref_name: # skip master camera
+        if target_name == ref_name:  # skip master camera
             continue
 
-        print(INFO + f'syncing {ref_name} to {target_name}')
-        target_data = results[target_name]['data_dict']
+        print(INFO + f"syncing {ref_name} <-> {target_name} ...")
+        target_data = results[target_name]["data_dict"]
         target_intrinsics = intrinsics[target_name]
 
+        common_keys = sorted(list(set(ref_data.keys()) & set(target_data.keys())))
+
+        obj_pts, img_pts_ref, img_pts_target = list(), list(), list()
+
+        for key in common_keys:
+            c_ref, id_ref = ref_data[key]
+            c_tgt, id_tgt = target_data[key]
+
+            # intersect ids
+            common_ids = np.intersect1d(id_ref.flatten(), id_tgt.flatten())
+
+            # get 3d points
+            obj_pts_all = board.getChessboardCorners()
+            obj_pts.append(obj_pts_all[common_ids])
+
+            mask_ref = np.isin(id_ref.flatten(), common_ids)
+            mask_tgt = np.isin(id_tgt.flatten(), common_ids)
+
+            img_pts_ref.append(c_ref[mask_ref])
+            img_pts_target.append(c_tgt[mask_tgt])
+
+        if len(obj_pts) < 10:
+            print(
+                WARNING + f"only {len(obj_pts)} common frames found. Poor calibration"
+            )
+        else:
+            print(f"using {len(obj_pts)} common frames")
+
+        # stereo calibration
+        print(f"solving stereo geometry...")
+        flags = cv2.CALIB_FIX_INTRINSIC
+        criteria = (cv2.TermCriteria_MAX_ITER + cv2.TermCriteria_EPS, 100, 1e-5)
+
+        ret, _, _, _, _, R, T, _, _ = cv2.stereoCalibrate(
+            objectPoints=obj_pts,
+            imagePoints1=img_pts_ref,
+            imagePoints2=img_pts_target,
+            cameraMatrix1=ref_intrinsics["K"],
+            distCoeffs1=ref_intrinsics["D"],
+            cameraMatrix2=target_intrinsics["K"],
+            distCoeffs2=target_intrinsics["D"],
+            imageSize=ref_intrinsics["shape"],
+            criteria=criteria,
+            flags=flags,
+        )
+
+        print(f'stereo rmse: {ret:.4f}')
+        print(f'pos: {T.T}')
+
+        final_output['camera'][target_name] = {
+            'K': target_intrinsics['K'],
+            'D': target_intrinsics['D'],
+            'R': R,
+            'T': T,
+            'rmse': ret
+        }
+
+    # save as .npz, structure the keys so they are easy to load
+    save_dict = {}
+    for cam_name, params in final_output['camera'].items():
+        save_dict[f"{cam_name}_K"] = params['K']
+        save_dict[f"{cam_name}_D"] = params['D']
+        save_dict[f"{cam_name}_R"] = params['R']
+        save_dict[f"{cam_name}_T"] = params['T']
+
+    np.savez('multicam_calibration.npz', **save_dict)
+    print('\nsaved all parameters to multicam_calibration.npz')
 
 
 if __name__ == "__main__":
