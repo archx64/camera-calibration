@@ -1,11 +1,17 @@
-import cv2, os, time
+import cv2, os
+from copy import deepcopy
 
-CAM1_SOURCE = 1
-CAM2_SOURCE = 2
+# CAM1_SOURCE = 1
+# CAM2_SOURCE = 2
+WEB_CAM = False
+CAM1_SOURCE = 'rtsp://admin:csimAIT5706@192.168.6.101:554/Streaming/Channels/101/'
+CAM2_SOURCE = 'rtsp://admin:csimAIT5706@192.168.6.100:554/Streaming/Channels/101/'
 
 BASE_DIR = "calibration_data"
 FOLDER1 = os.path.join(BASE_DIR, "cam1")
 FOLDER2 = os.path.join(BASE_DIR, "cam2")
+
+
 
 
 def setup_folders():
@@ -21,17 +27,20 @@ def setup_folders():
 def main():
     setup_folders()
 
-    cap1 = cv2.VideoCapture(CAM1_SOURCE, cv2.CAP_DSHOW)
-    cap2 = cv2.VideoCapture(CAM2_SOURCE, cv2.CAP_DSHOW)
+    # cap1 = cv2.VideoCapture(CAM1_SOURCE, cv2.CAP_DSHOW)
+    # cap2 = cv2.VideoCapture(CAM2_SOURCE, cv2.CAP_DSHOW)
 
-    desired_width = 640
-    desired_height = 360
+    cap1 = cv2.VideoCapture(CAM1_SOURCE)
+    cap2 = cv2.VideoCapture(CAM2_SOURCE)
 
-    cap1.set(cv2.CAP_PROP_FRAME_WIDTH, desired_width)
-    cap2.set(cv2.CAP_PROP_FRAME_WIDTH, desired_width)
+    # desired_width = 640
+    # desired_height = 360
 
-    cap1.set(cv2.CAP_PROP_FRAME_HEIGHT, desired_height)
-    cap2.set(cv2.CAP_PROP_FRAME_HEIGHT, desired_height)
+    # cap1.set(cv2.CAP_PROP_FRAME_WIDTH, desired_width)
+    # cap2.set(cv2.CAP_PROP_FRAME_WIDTH, desired_width)
+
+    # cap1.set(cv2.CAP_PROP_FRAME_HEIGHT, desired_height)
+    # cap2.set(cv2.CAP_PROP_FRAME_HEIGHT, desired_height)
 
     if not cap1.isOpened() or not cap2.isOpened():
         print(
@@ -58,11 +67,15 @@ def main():
         aspect_ratio = frame1.shape[1] / frame1.shape[0]
         display_w = int(display_h * aspect_ratio)
 
-        show1 = cv2.resize(frame1, (display_w, display_h))
-        show2 = cv2.resize(frame2, (display_w, display_h))
-        show1 = cv2.flip(show1, 1)
-        show2 = cv2.flip(show2, 1)
+        frame1_copy = deepcopy(frame1)
+        frame2_copy = deepcopy(frame2)
 
+        show1 = cv2.resize(frame1_copy, (display_w, display_h))
+        show2 = cv2.resize(frame2_copy, (display_w, display_h))
+
+        if WEB_CAM:
+            show1 = cv2.flip(show1, 1)
+            show2 = cv2.flip(show2, 1)
 
         combined = cv2.hconcat([show1, show2])
 
