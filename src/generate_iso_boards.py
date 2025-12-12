@@ -1,6 +1,6 @@
 import os, cv2
 import numpy as np
-from utils import *
+from .utils import *
 
 
 print(f"data type: {type(cv2.aruco.DICT_6X6_250)} value: {cv2.aruco.DICT_6X6_250}")

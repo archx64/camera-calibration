@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
-from .utils import ERROR
+# from mpl_toolkits.mplot3d import Axes3D
+from utils import ERROR, TARGET_PAPER
 
 
 def plot_camera(ax, R, T, color, label, scale=0.05):
@@ -41,7 +41,7 @@ def plot_camera(ax, R, T, color, label, scale=0.05):
 
 def visualize_multicam():
     try:
-        data = np.load("multicam_calibration.npz")
+        data = np.load(f"multicam_calibration_{TARGET_PAPER}.npz")
     except:
         print(ERROR + "file not found")
         return
@@ -70,6 +70,8 @@ def visualize_multicam():
     all_positions = np.array(all_positions)
     mean_pos = np.mean(all_positions, axis=0)
     max_range = np.max(np.abs(all_positions - mean_pos)) + 0.2
+
+    ax.invert_yaxis()
 
     ax.set_xlim(mean_pos[0] - max_range, mean_pos[0] + max_range)
     ax.set_ylim(mean_pos[1] - max_range, mean_pos[1] + max_range)

@@ -2,3 +2,4 @@ calibration_data/
 sample_calibration_data/
 *-env/
 *.zip
+*.npz

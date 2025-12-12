@@ -45,5 +45,5 @@ def convert_to_mmpose_format(npz_path, output_path):
     print(f'successfully converted to {output_path}')
 
 if __name__ == '__main__':
-    convert_to_mmpose_format(npz_path='multicam_calibration.npz', output_path='multicam_calibration.json')
+    convert_to_mmpose_format(npz_path='multicam_calibration_A0.npz', output_path='multicam_calibration.json')
 
