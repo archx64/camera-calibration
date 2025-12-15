@@ -1,5 +1,6 @@
+*_calibration_data/
 calibration_data/
-sample_calibration_data/
+synchonized_videos/
 *-env/
 *.zip
 *.npz

@@ -1,6 +1,6 @@
 import os, time, datetime, threading
 import cv2
-from copy import deepcopy
+# from copy import deepcopy
 from utils import INFO, WARNING, ERROR
 
 WEB_CAM = False
@@ -50,7 +50,7 @@ class ThreadedCamera:
 
     def read(self):
         with self.read_lock:
-            # Return a COPY to prevent race conditions during write
+            # return a COPY to prevent race conditions during write
             if self.frame is not None:
                 return self.grabbed, self.frame.copy()
             return self.grabbed, None
@@ -110,14 +110,14 @@ def main():
     for i, src in enumerate(CAMERA_SOURCES):
         cam = ThreadedCamera(src, i + 1).start()
         caps.append(cam)
-        time.sleep(0.5)  # Give RTSP streams a moment to stabilize
+        time.sleep(0.5)  # give RTSP streams a moment to stabilize
 
     # basic check
     if not all([c.isOpened() for c in caps]):
         print(ERROR + "camera failed to open")
         return
 
-    # Get defaults
+    # get defaults
     frame_w = int(caps[0].get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_h = int(caps[0].get(cv2.CAP_PROP_FRAME_HEIGHT))
 
@@ -155,7 +155,7 @@ def main():
                     writer.write(frames[i])
 
             # visualization
-            display_h = 360
+            display_h = 480
             previews = []
             for frame in frames:
                 if frame is None:
